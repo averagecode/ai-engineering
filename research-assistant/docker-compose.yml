@@ -1,0 +1,131 @@
+# Everything runs locally: no API keys, no paid services, no outbound calls
+# beyond pulling images and Ollama models.
+#
+#   docker compose up -d weaviate ollama      # start the backing services
+#   docker compose run --rm model-puller      # one-off: pull the local models
+#   docker compose run --rm assistant ingest  # index the PDFs in ./data
+#   docker compose run --rm assistant ask "What do these papers conclude?"
+#   docker compose run --rm assistant chat    # interactive session
+
+name: research-assistant
+
+services:
+  weaviate:
+    image: semitechnologies/weaviate:1.33.0
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --scheme
+      - http
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    environment:
+      # Vectors are supplied by the app (Ollama embeddings via LangChain), so no
+      # collection here is ever given a server-side vectoriser. The image still
+      # reports its compiled-in text2vec-*/generative-* modules at /v1/meta —
+      # they are inert: nothing configures them, so none is ever called and none
+      # needs an API key.
+      DEFAULT_VECTORIZER_MODULE: none
+      ENABLE_MODULES: ""
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: /var/lib/weaviate
+      QUERY_DEFAULTS_LIMIT: "25"
+      DISABLE_TELEMETRY: "true"
+    volumes:
+      - weaviate-data:/var/lib/weaviate
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/v1/.well-known/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:0.12.0
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+    restart: unless-stopped
+    # Uncomment to use an NVIDIA GPU (much faster; CPU works fine otherwise).
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # One-shot helper: downloads the chat and embedding models into the volume.
+  model-puller:
+    image: ollama/ollama:0.12.0
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      LLM_MODEL: ${RA_LLM_MODEL:-qwen2.5:3b}
+      EMBEDDING_MODEL: ${RA_EMBEDDING_MODEL:-nomic-embed-text}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - 'ollama pull "$${LLM_MODEL}" && ollama pull "$${EMBEDDING_MODEL}"'
+    restart: "no"
+
+  assistant:
+    build:
+      context: .
+      target: runtime
+    depends_on:
+      weaviate:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    environment:
+      RA_WEAVIATE_HOST: weaviate
+      RA_WEAVIATE_HTTP_PORT: "8080"
+      RA_WEAVIATE_GRPC_PORT: "50051"
+      RA_OLLAMA_BASE_URL: http://ollama:11434
+      RA_DATA_DIR: /app/data
+      RA_LLM_MODEL: ${RA_LLM_MODEL:-qwen2.5:3b}
+      RA_EMBEDDING_MODEL: ${RA_EMBEDDING_MODEL:-nomic-embed-text}
+    volumes:
+      - ./data:/app/data:ro
+    stdin_open: true
+    tty: true
+
+  # Unit + integration tests against the live services in this compose file.
+  tests:
+    build:
+      context: .
+      target: test
+    depends_on:
+      weaviate:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    environment:
+      RA_WEAVIATE_HOST: weaviate
+      RA_OLLAMA_BASE_URL: http://ollama:11434
+      RA_COLLECTION_NAME: TestResearchPaperChunk
+      RA_LLM_MODEL: ${RA_LLM_MODEL:-qwen2.5:3b}
+      RA_EMBEDDING_MODEL: ${RA_EMBEDDING_MODEL:-nomic-embed-text}
+    # Mounted rather than baked in, so editing a test or a module does not need an
+    # image rebuild. The package is installed editable, so ./src is picked up too.
+    volumes:
+      - ./src:/app/src:ro
+      - ./tests:/app/tests:ro
+    command: ["pytest", "-v"]
+
+volumes:
+  weaviate-data:
+  ollama-models:

@@ -1,0 +1,21 @@
+# Core orchestration
+langchain==0.3.27
+langchain-core==0.3.76
+langchain-community==0.3.29
+langchain-text-splitters==0.3.11
+
+# Local inference (Ollama) — no API keys, no cost
+langchain-ollama==0.3.8
+
+# Vector store
+weaviate-client==4.17.0
+langchain-weaviate==0.0.5
+
+# PDF parsing
+pypdf==6.1.1
+
+# CLI
+typer==0.19.2
+rich==14.1.0
+pydantic==2.11.9
+pydantic-settings==2.10.1

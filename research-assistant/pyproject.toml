@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "research-assistant"
+version = "0.1.0"
+description = "Local, zero-cost research assistant over PDF papers (LangChain + Weaviate + Ollama)"
+readme = "README.md"
+requires-python = ">=3.11"
+dynamic = ["dependencies"]
+
+[project.scripts]
+research-assistant = "research_assistant.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+# Dev dependencies are not declared here: requirements-dev.txt starts with a
+# `-r` include, which setuptools cannot parse. Install them with
+# `pip install -r requirements-dev.txt`.
+dependencies = { file = ["requirements.txt"] }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra --strict-markers"
+# Generous per-test cap: a 3B model on CPU can legitimately take a minute or two
+# per agent question, but nothing here should ever run for ten.
+timeout = 600
+markers = [
+    "integration: needs live Weaviate and Ollama services (deselect with -m 'not integration')",
+]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["src/research_assistant"]
+branch = true

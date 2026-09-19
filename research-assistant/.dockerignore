@@ -1,0 +1,13 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.git/
+.gitignore
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+data/*.pdf
+weaviate-data/
+.env
