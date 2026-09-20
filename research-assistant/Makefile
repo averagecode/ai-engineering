@@ -80,3 +80,25 @@ test-integration: ## Run the integration tests in .venv against localhost servic
 .PHONY: coverage
 coverage: ## Unit test coverage report
 	$(PY) -m pytest -m "not integration" --cov --cov-report=term-missing
+
+# --- evals ------------------------------------------------------------------ #
+
+.PHONY: eval-verify
+eval-verify: ## Check the eval ground truth still matches the PDFs (fast, offline)
+	$(PY) -m evals.verify_dataset
+
+.PHONY: eval
+eval: ## Run the deterministic eval suite against the live stack
+	$(PY) -m evals.run_eval
+
+.PHONY: eval-smoke
+eval-smoke: ## Run 3 eval cases, to check the harness end to end
+	$(PY) -m evals.run_eval --limit 3
+
+.PHONY: eval-judge
+eval-judge: ## Run evals including LLM-as-judge scorers (slow, judge-limited)
+	$(PY) -m evals.run_eval --judge
+
+.PHONY: eval-ui
+eval-ui: ## Browse logged eval runs at http://localhost:5000
+	$(PY) -m mlflow ui

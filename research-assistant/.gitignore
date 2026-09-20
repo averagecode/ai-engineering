@@ -19,3 +19,7 @@ htmlcov/
 data/*.pdf
 data/**/*.pdf
 weaviate-data/
+
+# MLflow local tracking store (eval runs)
+mlruns/
+mlartifacts/

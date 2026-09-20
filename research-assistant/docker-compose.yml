@@ -32,6 +32,18 @@ services:
       ENABLE_MODULES: ""
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
       PERSISTENCE_DATA_PATH: /var/lib/weaviate
+      # Weaviate stores schema in a RAFT log keyed by node name. Left unset, the
+      # node name defaults to the container's random hostname, so recreating the
+      # container (any config change, a Docker restart) orphans the persisted
+      # RAFT state: the node is "not part of a stable configuration", never
+      # elects a leader, and /v1/.well-known/ready returns 503 forever.
+      # Pinning it keeps the identity stable across recreation.
+      #
+      # This value matches the RAFT state already in the weaviate-data volume.
+      # Changing it requires wiping that volume (`docker compose down -v`) and
+      # re-running ingestion, since the old RAFT log would no longer match.
+      CLUSTER_HOSTNAME: ${RA_WEAVIATE_NODE_NAME:-ddd759283b32}
+      RAFT_BOOTSTRAP_EXPECT: "1"
       QUERY_DEFAULTS_LIMIT: "25"
       DISABLE_TELEMETRY: "true"
     volumes:

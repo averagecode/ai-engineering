@@ -132,6 +132,12 @@ src/research_assistant/
   ingest.py        Pipeline: load → chunk → embed → upsert, with idempotency
   agent.py         Tools, prompt, AgentExecutor, conversation state
   cli.py           Typer commands
+evals/
+  dataset.yaml     Ground truth: 34 cases over all 12 papers, verified
+  metrics.py       Deterministic scorers as pure functions       ← no MLflow, no network
+  scorers.py       MLflow @scorer wrappers + optional LLM judges
+  verify_dataset.py  Re-checks the ground truth against the PDFs
+  run_eval.py      Harness: mlflow.genai.evaluate over the live stack
 tests/
   fakes.py         In-memory Weaviate / Ollama / agent doubles
   unit/            152 offline tests
@@ -210,6 +216,94 @@ than matching exact wording, so they do not flake on model sampling.
 
 ---
 
+## Evals
+
+MLflow-based evaluation lives in [evals/](evals/). Tracking is local — MLflow
+writes to `./mlruns` and the judge can be Ollama — so evals stay free and
+key-less like the rest of the stack.
+
+```bash
+make eval-verify   # check the ground truth still matches the PDFs (offline, instant)
+make eval-smoke    # 3 cases, to check the harness end to end
+make eval          # the full deterministic suite against the live stack
+make eval-judge    # additionally run LLM-as-judge scorers (slow)
+make eval-ui       # browse runs at http://localhost:5000
+```
+
+### Deterministic first, judges second
+
+Most regressions in a RAG system are *retrieval* regressions — an embedding-model
+swap, a chunk-size change, a broken filter — and those are measurable exactly.
+So the default suite uses no LLM judge at all. Every scorer is a pure function
+over the agent's `Answer` ([evals/metrics.py](evals/metrics.py)), which makes it
+fast, reproducible, and unit-tested in [tests/unit/test_eval_metrics.py](tests/unit/test_eval_metrics.py).
+
+| Scorer | Measures | Catches |
+| --- | --- | --- |
+| `retrieved_anything` | `tools_used` is non-empty | the model answering from memory instead of searching |
+| `retrieved_expected_source` | expected paper among retrieved chunks | retrieval pointing at the wrong paper |
+| `retrieved_expected_page` | expected paper on a page that *carries* the fact | right paper, wrong chunk |
+| `reciprocal_rank` | 1/rank of the first correct chunk | ranking degradation inside top-k |
+| `citations_are_valid` | every cited file exists in the corpus | fabricated sources |
+| `citations_are_grounded` | every citation was actually retrieved | citing a page it never read |
+| `cited_expected_source` | the answer credits the right paper | mis-attribution |
+| `contains_expected_fact` | answer states an expected figure | answer-quality drift |
+| `fact_coverage` | fraction of expected figures present | partial answers to multi-fact questions |
+| `cites_inline` | prose carries `(paper.pdf, p. N)` | tracks the 3B inline-citation gap explicitly |
+| `refused_out_of_corpus` | declined *and* cited nothing | hallucinating on unanswerable questions |
+
+Out-of-corpus cases are scored as a separate group: they should produce a refusal,
+so grading them on retrieval metrics would penalise correct behaviour.
+
+### Ground truth
+
+[evals/dataset.yaml](evals/dataset.yaml) holds 34 cases covering **all 12 papers**,
+and evals run against the **full corpus** — not a subset. Retrieval difficulty
+scales with corpus size and homogeneity, so scoring against fewer papers would
+describe an easier system than the one you have.
+
+That creates a problem this corpus makes acute: a dozen papers all about missing
+baryons and the SZ effect overlap heavily (`IllustrisTNG` appears in 7, `EAGLE`
+in 6). Asserting "only paper X can answer this" is usually *wrong* — several
+papers legitimately report a filament gas temperature, and retrieving any of them
+is correct. So cases are split by what can honestly be asserted:
+
+| kind | n | Ground truth | Scored on |
+| --- | --- | --- | --- |
+| `bibliographic` | 12 | A title pins exactly one paper — "who is the lead author of …" | source + answer + integrity |
+| `scoped_fact` | 12 | Question names the paper by title, asks for one of its figures | source + answer + integrity |
+| `open_fact` | 6 | Information the corpus contains, no paper named | answer + integrity only |
+| `inventory` | 1 | The corpus itself | integrity |
+| `out_of_corpus` | 3 | Unanswerable — must decline | refusal + integrity |
+
+`scoped_fact` works because **paper titles sit in the page-1 text that gets
+embedded**, so retrieval can be steered to a named paper without needing a
+metadata filter. `open_fact` cases never assert a source, so a correct answer
+drawn from an equally valid paper is not punished.
+
+`make eval-verify` re-checks every claim against the actual PDF text and warns
+about papers no case exercises. Run it whenever the corpus changes — **a stale
+expectation turns a working system into a failing score**, and nothing else in the
+suite can catch that. It has already earned its keep twice: it caught a pattern
+broken by a PDF gluing an affiliation marker to an author surname
+(`Jianzhuo Lia`), and an inventory case that was checking page text when
+filenames only exist in metadata.
+
+### On LLM-as-judge
+
+`make eval-judge` adds MLflow's `Correctness` and `Guidelines` scorers, pointed at
+Ollama (`ollama:/<model>` — MLflow has a first-class Ollama provider that needs no
+API key). Be clear-eyed about the limit: with one local model, **the judge is the
+model under test**, and a 3B judge is weak. Treat those scores as a smoke signal
+and rely on the deterministic scorers for regressions. Pointing `--judge-model` at
+a larger model is what makes them meaningful.
+
+MLflow's built-in retrieval scorers — `RetrievalGroundedness`, `RetrievalRelevance`,
+`RetrievalSufficiency`, `ToolCallCorrectness` — all require a `trace` column,
+because they read MLflow retriever spans rather than input/output text. Using them
+means instrumenting the agent with `mlflow.tracing` first; that is not wired up
+here, and the custom scorers cover the same ground deterministically.
+
 ## Troubleshooting
 
 | Symptom | Fix |
@@ -217,6 +311,7 @@ than matching exact wording, so they do not flake on model sampling.
 | `Could not reach Ollama at …` | `make up`, then `make status` |
 | `Missing Ollama model(s): …` | `make pull-models` (the error prints the exact `ollama pull` commands) |
 | `Could not connect to Weaviate at …` | `make up`; check `make logs` |
+| `dependency failed to start: container …-weaviate-1 is unhealthy` | Weaviate is running but `/v1/.well-known/ready` returns 503, and the log says `raft … not part of a stable configuration`. Its RAFT node name must stay stable across container recreation — see `CLUSTER_HOSTNAME` in [docker-compose.yml](docker-compose.yml). If you changed that value, the persisted RAFT log no longer matches: either change it back, or `docker compose down -v` and re-ingest |
 | `The index is empty` | Put PDFs in `data/` and run `make ingest` |
 | A paper ingests as `empty` | It is a scanned image with no text layer — OCR it first (e.g. `ocrmypdf in.pdf out.pdf`) |
 | Answers ignore the papers | Your model probably lacks tool calling — switch to `qwen2.5:3b` or `llama3.1:8b` |

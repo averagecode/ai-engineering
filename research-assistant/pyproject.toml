@@ -24,7 +24,7 @@ dependencies = { file = ["requirements.txt"] }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 addopts = "-ra --strict-markers"
 # Generous per-test cap: a 3B model on CPU can legitimately take a minute or two
 # per agent question, but nothing here should ever run for ten.

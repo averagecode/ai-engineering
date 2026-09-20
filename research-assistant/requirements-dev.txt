@@ -5,3 +5,8 @@ pytest-mock==3.15.1
 reportlab==4.4.4   # generates sample PDFs for integration tests
 # Caps any single test; local CPU inference can otherwise hang a run for hours.
 pytest-timeout==2.4.0
+
+# Evals (evals/). MLflow tracking is local-only: results go to ./mlruns, and the
+# judge can be Ollama, so evals stay free and key-less like the rest of the stack.
+mlflow==3.16.1
+PyYAML==6.0.2

@@ -1,0 +1,385 @@
+# Ground truth for the indexed corpus.  GENERATED-FRIENDLY: safe to edit by hand.
+#
+# Design note. This corpus is deliberately homogeneous - a dozen papers all about
+# missing baryons, the WHIM and the Sunyaev-Zel'dovich effect. "IllustrisTNG"
+# appears in 7 of them, "EAGLE" in 6. So asserting "only paper X can answer this"
+# is usually wrong: several papers legitimately report a filament gas temperature,
+# and retrieving any of them is correct behaviour, not a failure.
+#
+# Cases are therefore split by what can honestly be asserted:
+#
+#   bibliographic  A paper title pins exactly one paper, so both the source and
+#                  the answer are assertable. Also gives every paper coverage.
+#   scoped_fact    The question names the paper by title, then asks for one of its
+#                  figures. Tests whether retrieval can be steered to a named
+#                  paper by title - which is possible because titles sit in the
+#                  page-1 text that gets embedded.
+#   open_fact      Paper-agnostic: asks about information the corpus contains
+#                  without asserting which paper supplies it. Scored on the answer
+#                  and on citation integrity only.
+#   inventory      About the corpus itself.
+#   out_of_corpus  NOT answerable; the agent must decline rather than invent.
+#
+# Evals run against the FULL corpus in data/, not a subset: retrieval difficulty
+# scales with corpus size and homogeneity, so scoring against fewer papers would
+# describe an easier system than the one that exists.
+#
+# Every figure and name was read out of the actual PDF text. Run `make eval-verify`
+# after changing the corpus: it re-checks each claim and warns about papers no
+# case exercises.
+
+cases:
+- id: bib-degraaff
+  kind: bibliographic
+  question: Who is the lead author of "Probing the missing baryons with the Sunyaev-Zel'dovich effect
+    from filaments"?
+  source: 1709.10378v3.pdf
+  pages: &id001
+  - 1
+  patterns:
+  - de\s*Graa
+  expected_facts:
+  - Anna de Graaff is the lead author.
+- id: bib-tanimura2019
+  kind: bibliographic
+  question: Who is the lead author of "A search for warm/hot gas filaments between pairs of SDSS Luminous
+    Red Galaxies"?
+  source: mnras_483_1_223.pdf
+  pages: *id001
+  patterns:
+  - Tanimura
+  expected_facts:
+  - Hideki Tanimura is the lead author.
+- id: bib-yang
+  kind: bibliographic
+  question: Who is the lead author of "Understanding the relation between thermal Sunyaev-Zeldovich decrement
+    and halo mass using the SIMBA and TNG simulations"?
+  source: stac2505.pdf
+  pages: *id001
+  patterns:
+  - Yang
+  expected_facts:
+  - Tianyi Yang is the lead author.
+- id: bib-galarraga
+  kind: bibliographic
+  question: Who is the lead author of "Properties of gas phases around cosmic filaments at z = 0 in the
+    IllustrisTNG simulation"?
+  source: Galárraga-Espinosa et al. - 2021 - Properties of gas phases around cosmic filaments at z = 0
+    in the IllustrisTNG simulation.pdf
+  pages: *id001
+  patterns:
+  - Gal[áa]rraga
+  expected_facts:
+  - Daniela Galarraga-Espinosa is the lead author.
+- id: bib-konietzka
+  kind: bibliographic
+  question: Who is the lead author of "Ray-tracing Fast Radio Bursts Through IllustrisTNG"?
+  source: Konietzka et al. - 2025 - Ray-tracing Fast Radio Bursts Through IllustrisTNG Cosmological Dispersion
+    Measures from Redshift 0.pdf
+  pages: *id001
+  patterns:
+  - Konietzka
+  expected_facts:
+  - Ralf M. Konietzka is the lead author.
+- id: bib-li
+  kind: bibliographic
+  question: Who is the lead author of "Tracing Missing Baryons in the Cosmic Filaments with tSZ and CMB-Lensing
+    Stacking"?
+  source: Li et al. - 2025 - Tracing Missing Baryons in the Cosmic Filaments with tSZ and CMB-Lensing
+    Stacking.pdf
+  pages: *id001
+  patterns:
+  - Jianzhuo
+  - \bLi
+  expected_facts:
+  - Jianzhuo Li is the lead author.
+- id: bib-lim
+  kind: bibliographic
+  question: 'Who is the lead author of "Properties of the ionized CGM and IGM: tests for galaxy formation
+    models from the Sunyaev-Zel''dovich effect"?'
+  source: Lim et al. - 2021 - Properties of the ionized CGM and IGM tests for galaxy formation models
+    from the Sunyaev-Zel'dovich.pdf
+  pages: *id001
+  patterns:
+  - Lim
+  expected_facts:
+  - S. H. Lim is the lead author.
+- id: bib-martizzi
+  kind: bibliographic
+  question: 'Who is the lead author of "Baryons in the Cosmic Web of IllustrisTNG - I: gas in knots, filaments,
+    sheets, and voids"?'
+  source: Martizzi et al_2019_Baryons in the Cosmic Web of IllustrisTNG – I.pdf
+  pages: *id001
+  patterns:
+  - Martizzi
+  expected_facts:
+  - Davide Martizzi is the lead author.
+- id: bib-mroczkowski
+  kind: bibliographic
+  question: Who is the lead author of "Astrophysics with the Spatially and Spectrally Resolved Sunyaev-Zeldovich
+    Effects"?
+  source: Mroczkowski et al_2019_Astrophysics with the Spatially and Spectrally Resolved Sunyaev-Zeldovich.pdf
+  pages: *id001
+  patterns:
+  - Mroczkowski
+  expected_facts:
+  - Tony Mroczkowski is the lead author.
+- id: bib-roncarelli
+  kind: bibliographic
+  question: 'Who is the lead author of "The Sunyaev-Zel''dovich effects from a cosmological hydrodynamical
+    simulation: large-scale properties and correlation with the soft X-ray signal"?'
+  source: Roncarelli et al. - 2007 - The Sunyaev–Zel'dovich effects from a cosmological hydrodynamical
+    simulation large-scale properties.pdf
+  pages: *id001
+  patterns:
+  - Roncarelli
+  expected_facts:
+  - M. Roncarelli is the lead author.
+- id: bib-tanimura2020
+  kind: bibliographic
+  question: Who is the lead author of "Density and temperature of cosmic-web filaments on scales of tens
+    of megaparsecs"?
+  source: Tanimura et al. - 2020 - Density and temperature of cosmic-web filaments on scales of tens of
+    megaparsecs.pdf
+  pages: *id001
+  patterns:
+  - Tanimura
+  expected_facts:
+  - H. Tanimura is the lead author.
+- id: bib-tuominen
+  kind: bibliographic
+  question: Who is the lead author of "An EAGLE view of the missing baryons"?
+  source: Tuominen et al_2021_An EAGLE view of the missing baryons.pdf
+  pages: *id001
+  patterns:
+  - Tuominen
+  expected_facts:
+  - T. Tuominen is the lead author.
+- id: scoped-degraaff-fraction
+  kind: scoped_fact
+  question: In "Probing the missing baryons with the Sunyaev-Zel'dovich effect from filaments", what fraction
+    of the total baryon content can the filamentary gas account for?
+  source: 1709.10378v3.pdf
+  pages:
+  - 1
+  - 10
+  - 11
+  patterns:
+  - 11\s*±\s*7
+  - 11\s*(%|per\s*cent|percent)
+  expected_facts:
+  - The filamentary gas accounts for 11 +/- 7 per cent of the total baryon content.
+- id: scoped-degraaff-significance
+  kind: scoped_fact
+  question: In "Probing the missing baryons with the Sunyaev-Zel'dovich effect from filaments", at what
+    significance is the residual tSZ signal detected?
+  source: 1709.10378v3.pdf
+  pages:
+  - 1
+  - 5
+  - 11
+  patterns:
+  - 2\.9\s*σ
+  - 2\.9\s*sigma
+  expected_facts:
+  - The residual tSZ signal is detected at 2.9 sigma.
+- id: scoped-tanimura2019-significance
+  kind: scoped_fact
+  question: In "A search for warm/hot gas filaments between pairs of SDSS Luminous Red Galaxies", at what
+    significance is the signal between pairs detected?
+  source: mnras_483_1_223.pdf
+  pages:
+  - 1
+  - 2
+  - 10
+  patterns:
+  - 5\.3\s*σ
+  - 5\.3\s*sigma
+  expected_facts:
+  - The signal is detected at 5.3 sigma.
+- id: scoped-tanimura2019-bahamas
+  kind: scoped_fact
+  question: In "A search for warm/hot gas filaments between pairs of SDSS Luminous Red Galaxies", what
+    Comptonization excess do the BAHAMAS simulations predict?
+  source: mnras_483_1_223.pdf
+  pages:
+  - 1
+  - 8
+  - 10
+  patterns:
+  - 0\.84
+  expected_facts:
+  - BAHAMAS predicts (0.84 +/- 0.24) x 10^-8.
+- id: scoped-tanimura2020-filaments
+  kind: scoped_fact
+  question: In "Density and temperature of cosmic-web filaments on scales of tens of megaparsecs", how
+    many filaments were studied and at what significance was the tSZ signal detected?
+  source: Tanimura et al. - 2020 - Density and temperature of cosmic-web filaments on scales of tens of
+    megaparsecs.pdf
+  pages:
+  - 1
+  patterns:
+  - 24[,\s]?544
+  - 4\.4\s*σ
+  - 4\.4\s*sigma
+  expected_facts:
+  - 24,544 filaments were studied.
+  - The tSZ signal was detected at 4.4 sigma.
+- id: scoped-li-significance
+  kind: scoped_fact
+  question: In "Tracing Missing Baryons in the Cosmic Filaments with tSZ and CMB-Lensing Stacking", at
+    what significance are the tSZ and CMB lensing signals detected?
+  source: Li et al. - 2025 - Tracing Missing Baryons in the Cosmic Filaments with tSZ and CMB-Lensing
+    Stacking.pdf
+  pages:
+  - 1
+  patterns:
+  - 7\.82
+  - 7\.78
+  expected_facts:
+  - The tSZ signal is detected at 7.82 sigma and CMB lensing at 7.78 sigma.
+- id: scoped-li-filament-count
+  kind: scoped_fact
+  question: In "Tracing Missing Baryons in the Cosmic Filaments with tSZ and CMB-Lensing Stacking", how
+    many filaments were stacked and which algorithm identified them?
+  source: Li et al. - 2025 - Tracing Missing Baryons in the Cosmic Filaments with tSZ and CMB-Lensing
+    Stacking.pdf
+  pages:
+  - 1
+  patterns:
+  - 31[,\s]?300
+  - DisPerSE
+  expected_facts:
+  - About 31,300 filaments were stacked, identified with DisPerSE.
+- id: scoped-martizzi-whim-fraction
+  kind: scoped_fact
+  question: In "Baryons in the Cosmic Web of IllustrisTNG - I", what fraction of baryons is in the WHIM
+    at redshift zero?
+  source: Martizzi et al_2019_Baryons in the Cosmic Web of IllustrisTNG – I.pdf
+  pages:
+  - 1
+  patterns:
+  - 46\s*(per\s*cent|%|percent)
+  - \b46\b
+  expected_facts:
+  - The WHIM is about 46 per cent of baryons at z = 0; the cool diffuse IGM about 39 per cent.
+- id: scoped-galarraga-whim-budget
+  kind: scoped_fact
+  question: In "Properties of gas phases around cosmic filaments at z = 0 in the IllustrisTNG simulation",
+    what share of the baryon budget does the WHIM account for at about 1 Mpc?
+  source: Galárraga-Espinosa et al. - 2021 - Properties of gas phases around cosmic filaments at z = 0
+    in the IllustrisTNG simulation.pdf
+  pages:
+  - 1
+  patterns:
+  - 80\s*(%|per\s*cent|percent)
+  expected_facts:
+  - The WHIM accounts for more than 80 per cent of the baryon budget at r ~ 1 Mpc.
+- id: scoped-roncarelli-y-average
+  kind: scoped_fact
+  question: In "The Sunyaev-Zel'dovich effects from a cosmological hydrodynamical simulation", what average
+    value is predicted for the Compton y-parameter?
+  source: Roncarelli et al. - 2007 - The Sunyaev–Zel'dovich effects from a cosmological hydrodynamical
+    simulation large-scale properties.pdf
+  pages:
+  - 1
+  patterns:
+  - 1\.19
+  expected_facts:
+  - The Compton y-parameter averages (1.19 +/- 0.32) x 10^-6.
+- id: scoped-yang-simulations
+  kind: scoped_fact
+  question: In "Understanding the relation between thermal Sunyaev-Zeldovich decrement and halo mass",
+    which two simulations are compared and what drives the deviation from self-similarity?
+  source: stac2505.pdf
+  pages:
+  - 1
+  - 6
+  - 7
+  - 8
+  patterns:
+  - SIMBA
+  - AGN
+  - jet
+  expected_facts:
+  - SIMBA and IllustrisTNG-100 are compared; SIMBA's AGN jet feedback drives the deviation.
+- id: scoped-konietzka-method
+  kind: scoped_fact
+  question: In "Ray-tracing Fast Radio Bursts Through IllustrisTNG", what quantity is measured and over
+    what redshift range?
+  source: Konietzka et al. - 2025 - Ray-tracing Fast Radio Bursts Through IllustrisTNG Cosmological Dispersion
+    Measures from Redshift 0.pdf
+  pages:
+  - 1
+  patterns:
+  - dispersion measure
+  - \bDM
+  - 5\.5
+  expected_facts:
+  - Dispersion measures of Fast Radio Bursts are measured from redshift 0 to 5.5.
+- id: open-whim-temperature
+  kind: open_fact
+  question: What temperature range characterises the warm-hot intergalactic medium?
+  patterns:
+  - 10\s*5
+  - 10\^?5
+  - 105\s*[-–]\s*10\s*7
+  expected_facts:
+  - The WHIM spans roughly 10^5 to 10^7 K.
+- id: open-baryon-share
+  kind: open_fact
+  question: What fraction of the energy density of the Universe is in baryons?
+  patterns:
+  - \b5\s*(%|per\s*cent|percent)
+  - \b4\.9
+  expected_facts:
+  - Baryons are approximately 5 per cent of the total energy density.
+- id: open-missing-baryon-problem
+  kind: open_fact
+  question: What is the missing baryon problem, and where are the missing baryons thought to reside?
+  patterns:
+  - filament
+  - WHIM|warm.hot
+  expected_facts:
+  - Observations account for only a fraction of predicted baryons.
+  - They are thought to reside in the WHIM in cosmic-web filaments.
+- id: open-tsz-definition
+  kind: open_fact
+  question: What physical quantity does the thermal Sunyaev-Zel'dovich effect measure along the line of
+    sight?
+  patterns:
+  - electron
+  - pressure|temperature
+  expected_facts:
+  - The tSZ effect measures the line-of-sight integral of electron pressure.
+- id: open-which-simulations
+  kind: open_fact
+  question: Which cosmological hydrodynamical simulations are used across this literature?
+  patterns:
+  - IllustrisTNG|TNG
+  - EAGLE|SIMBA|Magneticum|BAHAMAS
+  expected_facts:
+  - IllustrisTNG, EAGLE, SIMBA, Magneticum and BAHAMAS are used.
+- id: open-detection-significances
+  kind: open_fact
+  question: Several of these papers report a statistical significance for a tSZ detection from filaments.
+    What significances are reported?
+  patterns:
+  - 2\.9|4\.4|5\.3|7\.8
+  expected_facts:
+  - Reported significances include 2.9, 4.4, 5.3 and 7.82 sigma.
+- id: inventory-list
+  kind: inventory
+  question: Which papers do you have access to? List some of their filenames.
+  patterns:
+  - \.pdf
+  verify_against: filenames
+- id: ooc-exoplanets
+  kind: out_of_corpus
+  question: What do these papers conclude about the atmospheric composition of hot Jupiter exoplanets?
+- id: ooc-higgs
+  kind: out_of_corpus
+  question: According to these papers, what is the measured mass of the Higgs boson?
+- id: ooc-transformer
+  kind: out_of_corpus
+  question: What do these papers say about mixture-of-experts routing in transformer language models?

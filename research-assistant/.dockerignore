@@ -11,3 +11,5 @@ htmlcov/
 data/*.pdf
 weaviate-data/
 .env
+mlruns/
+mlartifacts/
